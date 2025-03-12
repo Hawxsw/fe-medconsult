@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 500 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Caduceus Symbol -->
+    <g transform="translate(30,10) scale(0.5)">
+        <!-- Staff -->
+        <path d="M75 10v120" stroke="#10B981" stroke-width="8" stroke-linecap="round"/>
+        
+        <!-- Wings -->
+        <path d="M30 40c0 0 45-30 90 0" stroke="#10B981" stroke-width="8" stroke-linecap="round"/>
+        <path d="M30 60c0 0 45-30 90 0" stroke="#10B981" stroke-width="8" stroke-linecap="round"/>
+        
+        <!-- Snakes -->
+        <path d="M60 20c-20 15-20 35 0 50c20 15 20 35 0 50" stroke="#10B981" stroke-width="8" fill="none" stroke-linecap="round"/>
+        <path d="M90 20c20 15 20 35 0 50c-20 15-20 35 0 50" stroke="#10B981" stroke-width="8" fill="none" stroke-linecap="round"/>
+        
+        <!-- Top Orb -->
+        <circle cx="75" cy="10" r="8" fill="#10B981"/>
+    </g>
+
+    <!-- Text Group -->
+    <g transform="translate(110,50)">
+        <!-- MEDCONSULTA -->
+        <text
+            x="0"
+            y="0"
+            font-family="Arial"
+            font-weight="900"
+            font-size="32"
+            letter-spacing="2"
+            fill="#1F2937"
+            dominant-baseline="middle"
+            textLength="300"
+        >
+            MEDCONSULTA
+        </text>
+        
+        <!-- SAÚDE DIGITAL -->
+        <text
+            x="0"
+            y="30"
+            font-family="Arial"
+            font-weight="300"
+            font-size="14"
+            letter-spacing="4"
+            fill="#10B981"
+            dominant-baseline="middle"
+            textLength="200"
+        >
+            SAÚDE DIGITAL
+        </text>
+    </g>
+</svg> 
