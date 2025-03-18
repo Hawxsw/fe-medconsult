@@ -4,6 +4,8 @@ import { RouterProvider } from 'react-router-dom'
 import { router } from './routes'
 import './styles/index.css'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AuthProvider } from './hooks/useAuth'
+import { PatientProvider } from './hooks/usePatients'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,7 +19,11 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <PatientProvider>
+          <RouterProvider router={router} />
+        </PatientProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </React.StrictMode>
 )

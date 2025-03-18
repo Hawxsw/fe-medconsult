@@ -1,143 +1,91 @@
-import { useState } from 'react';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-import { usePatients } from '@/hooks/usePatients';
-import { useNavigate } from 'react-router-dom';
-import { CreatePatientDTO } from '@/types/patient';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { CreatePatientSchema, createPatientSchema, UpdatePatientSchema, updatePatientSchema, usePatient } from '@/hooks/usePatients';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 
 export function PatientRegistration() {
     const navigate = useNavigate();
-    const { createPatient } = usePatients();
-    const [formData, setFormData] = useState<CreatePatientDTO>({
-        firstName: '',
-        lastName: '',
-        cpf: '',
-        phone: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        cep: '',
-        street: '',
-        number: '',
-        complement: '',
-        neighborhood: '',
-        city: '',
-        state: ''
-    });
+    const { id } = useParams();
+    const isNew = id === 'new';
+    const patientSchema = isNew ? createPatientSchema : updatePatientSchema;
+    type PatientSchema = z.infer<typeof patientSchema>;
+    const [isLoading, setLoading] = useState<boolean>(false);
+    const { getPatient, createPatient, updatePatient } = usePatient();
 
-    const formatCPF = (value: string) => {
-        const digits = value.replace(/\D/g, '');
-        if (digits.length <= 11) {
-            return digits.replace(/(\d{3})(\d{3})?(\d{3})?(\d{2})?/, (_, g1, g2, g3, g4) =>
-                g1 + (g2 ? '.' + g2 : '') + (g3 ? '.' + g3 : '') + (g4 ? '-' + g4 : '')
-            );
-        }
-        return value;
-    };
+    const {
+        handleSubmit,
+        control,
+        register,
+        setValue,
+        formState: { errors },
+      } = useForm<PatientSchema>({
+        resolver: zodResolver(patientSchema),
+        disabled: isLoading
+      });
 
-    const formatPhone = (value: string) => {
-        const digits = value.replace(/\D/g, '');
-        if (digits.length <= 11) {
-            return digits.replace(/(\d{2})(\d{1})?(\d{4})?(\d{4})?/, (_, g1, g2, g3, g4) =>
-                g1 ? `(${g1}` + (g2 ? `) ${g2}` : '') + (g3 ? `${g3}` : '') + (g4 ? `-${g4}` : '') : ''
-            );
-        }
-        return value;
-    };
 
-    const formatCEP = (value: string) => {
-        const digits = value.replace(/\D/g, '');
-        if (digits.length <= 8) {
-            return digits.replace(/(\d{5})(\d{3})?/, (_, g1, g2) =>
-                g1 + (g2 ? '-' + g2 : '')
-            );
-        }
-        return value;
-    };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        let formattedValue = value;
-
-        // Aplica formatação específica para cada campo
-        switch (name) {
-            case 'cpf':
-                formattedValue = formatCPF(value);
-                break;
-            case 'phone':
-                formattedValue = formatPhone(value);
-                break;
-            case 'cep':
-                formattedValue = formatCEP(value);
-                break;
-            default:
-                formattedValue = value;
-        }
-
-        setFormData(prev => ({
-            ...prev,
-            [name]: formattedValue
-        }));
-    };
-
-    const validateForm = () => {
-        if (formData.password !== formData.confirmPassword) {
-            throw new Error('As senhas não coincidem');
-        }
-        
-        if (formData.password.length < 6) {
-            throw new Error('A senha deve ter pelo menos 6 caracteres');
-        }
-
-        // Validação de CPF (exemplo básico)
-        if (formData.cpf.replace(/\D/g, '').length !== 11) {
-            throw new Error('CPF inválido');
-        }
-
-        // Validação de email
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData.email)) {
-            throw new Error('E-mail inválido');
-        }
-
-        // Validação de telefone
-        const phoneRegex = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
-        if (!phoneRegex.test(formData.phone)) {
-            throw new Error('Telefone inválido. Use o formato (99) 99999-9999');
-        }
-
-        // Validação de CEP
-        const cepRegex = /^\d{5}-\d{3}$/;
-        if (!cepRegex.test(formData.cep)) {
-            throw new Error('CEP inválido. Use o formato 12345-678');
-        }
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
+    const getData = useCallback(async () => {
+        setLoading(true);
         try {
-            validateForm();
-            
-            await createPatient.mutateAsync(formData, {
-                onSuccess: () => {
-                    toast.success('Cadastro realizado com sucesso!');
-                    navigate('/login');
-                },
-                onError: (error) => {
-                    toast.error(error.message || 'Erro ao realizar cadastro');
-                }
-            });
-        } catch (error) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error('Erro ao realizar cadastro');
-            }
-            console.error('Erro no cadastro:', error);
+    
+          if (id && !isNew) {
+            const foundPatient = await getPatient(id);
+            setValue('email', foundPatient.email);
+            setValue('firstName', foundPatient.firstName);
+            setValue('lastName', foundPatient.lastName);
+            setValue('cpf', foundPatient.cpf);
+            setValue('phone', foundPatient.phone);
+            setValue('cep', foundPatient.cep);
+            setValue('street', foundPatient.street);
+            setValue('number', foundPatient.number);
+            setValue('complement', foundPatient.complement);
+            setValue('neighborhood', foundPatient.neighborhood);
+            setValue('city', foundPatient.city);
+            setValue('state', foundPatient.state);
+            setValue('password', foundPatient.password);
+            setValue('confirmPassword', foundPatient.password);
+          }
+        } finally {
+          setLoading(false);
         }
-    };
+      }, [getPatient, id, isNew, setValue]);
+    
+      useEffect(() => {
+        getData();
+      }, [getData]);
+
+      const handleSubmitPatient = useCallback(
+        async (data: PatientSchema) => {
+          console.log('Form Data:', data);
+          setLoading(true);
+          try {
+            if (isNew) {
+              console.log('Creating new patient...');
+              const createdPatient = await createPatient(data as CreatePatientSchema);
+              console.log('Patient created:', createdPatient);
+              toast.success('Usuário criado com sucesso!');
+              return navigate(`/patients/${createdPatient.id}`);
+            }
+    
+            if (id) {
+              const { confirmPassword, password, ...updateData } = data;
+              await updatePatient(id, updateData as UpdatePatientSchema);
+              toast.success('Usuário atualizado com sucesso!');
+              return getData();
+            }
+          } finally {
+            setLoading(false);
+          }
+        },
+        [createPatient, getData, id, isNew, navigate, updatePatient],
+      );
+   
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
@@ -149,7 +97,7 @@ export function PatientRegistration() {
                         <p className="text-gray-600">Preencha seus dados para criar sua conta</p>
                     </div>
                     
-                    <form onSubmit={handleSubmit} className="space-y-8">
+                    <form onSubmit={handleSubmit(handleSubmitPatient)} className="space-y-8">
                         <div className="space-y-6 bg-gray-50 p-6 rounded-xl">
                             <div className="flex items-center gap-2 mb-4">
                                 <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -162,9 +110,7 @@ export function PatientRegistration() {
                                     <label className="block text-sm font-medium text-gray-700">Nome</label>
                                     <input
                                         type="text"
-                                        name="firstName"
-                                        value={formData.firstName}
-                                        onChange={handleChange}
+                                        {...register('firstName')}
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required
                                     />
@@ -173,9 +119,7 @@ export function PatientRegistration() {
                                     <label className="block text-sm font-medium text-gray-700">Sobrenome</label>
                                     <input
                                         type="text"
-                                        name="lastName"
-                                        value={formData.lastName}
-                                        onChange={handleChange}
+                                        {...register('lastName')}
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required
                                     />
@@ -184,9 +128,7 @@ export function PatientRegistration() {
                                     <label className="block text-sm font-medium text-gray-700">CPF</label>
                                     <input
                                         type="text"
-                                        name="cpf"
-                                        value={formData.cpf}
-                                        onChange={handleChange}
+                                        {...register('cpf')}
                                         placeholder="123.456.789-00"
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required
@@ -196,9 +138,7 @@ export function PatientRegistration() {
                                     <label className="block text-sm font-medium text-gray-700">Telefone</label>
                                     <input
                                         type="text"
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleChange}
+                                        {...register('phone')}
                                         placeholder="(99) 99999-9999"
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required
@@ -219,9 +159,7 @@ export function PatientRegistration() {
                                     <label className="block text-sm font-medium text-gray-700">E-mail</label>
                                     <input
                                         type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
+                                        {...register('email')}
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required
                                     />
@@ -230,9 +168,7 @@ export function PatientRegistration() {
                                     <label className="block text-sm font-medium text-gray-700">Senha</label>
                                     <input
                                         type="password"
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleChange}
+                                        {...register('password')}
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required
                                     />
@@ -242,9 +178,7 @@ export function PatientRegistration() {
                                     <label className="block text-sm font-medium text-gray-700">Confirmar Senha</label>
                                     <input
                                         type="password"
-                                        name="confirmPassword"
-                                        value={formData.confirmPassword}
-                                        onChange={handleChange}
+                                        {...register('confirmPassword')}
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required
                                     />
@@ -264,9 +198,7 @@ export function PatientRegistration() {
                                     <label className="block text-sm font-medium text-gray-700">CEP</label>
                                     <input
                                         type="text"
-                                        name="cep"
-                                        value={formData.cep}
-                                        onChange={handleChange}
+                                        {...register('cep')}
                                         placeholder="12345-678"
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required
@@ -276,9 +208,7 @@ export function PatientRegistration() {
                                     <label className="block text-sm font-medium text-gray-700">Rua</label>
                                     <input
                                         type="text"
-                                        name="street"
-                                        value={formData.street}
-                                        onChange={handleChange}
+                                        {...register('street')}
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required
                                     />
@@ -287,9 +217,7 @@ export function PatientRegistration() {
                                     <label className="block text-sm font-medium text-gray-700">Número</label>
                                     <input
                                         type="text"
-                                        name="number"
-                                        value={formData.number}
-                                        onChange={handleChange}
+                                        {...register('number')}
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required
                                     />
@@ -298,9 +226,7 @@ export function PatientRegistration() {
                                     <label className="block text-sm font-medium text-gray-700">Complemento</label>
                                     <input
                                         type="text"
-                                        name="complement"
-                                        value={formData.complement}
-                                        onChange={handleChange}
+                                        {...register('complement')}
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                     />
                                 </div>
@@ -308,9 +234,7 @@ export function PatientRegistration() {
                                     <label className="block text-sm font-medium text-gray-700">Bairro</label>
                                     <input
                                         type="text"
-                                        name="neighborhood"
-                                        value={formData.neighborhood}
-                                        onChange={handleChange}
+                                        {...register('neighborhood')}
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required
                                     />
@@ -319,9 +243,7 @@ export function PatientRegistration() {
                                     <label className="block text-sm font-medium text-gray-700">Cidade</label>
                                     <input
                                         type="text"
-                                        name="city"
-                                        value={formData.city}
-                                        onChange={handleChange}
+                                        {...register('city')}
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required
                                     />
@@ -330,9 +252,7 @@ export function PatientRegistration() {
                                     <label className="block text-sm font-medium text-gray-700">Estado</label>
                                     <input
                                         type="text"
-                                        name="state"
-                                        value={formData.state}
-                                        onChange={handleChange}
+                                        {...register('state')}
                                         placeholder="SP"
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required

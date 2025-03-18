@@ -1,9 +1,24 @@
-import { useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { useNavigate, Link } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { routes } from '@/routes/Router';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { toast } from 'react-hot-toast';
+import { useForm } from 'react-hook-form';
+
+const signInSchema = z.object({
+    email: z
+      .string({
+        required_error: 'Você deve inserir um e-mail.',
+      })
+      .email({ message: 'Informe um e-mail válido.' }),
+    password: z.string({
+      required_error: 'Você deve inserir uma senha.',
+    }),
+  });
 
 interface LoginFormData {
     email: string;
@@ -11,62 +26,44 @@ interface LoginFormData {
     userType: 'patient' | 'doctor';
 }
 
+type SignInSchema = z.infer<typeof signInSchema>;
+
+
 export function Login() {
     const navigate = useNavigate();
-    const { login } = useAuth();
-    const [formData, setFormData] = useState<LoginFormData>({
-        email: '',
-        password: '',
-        userType: 'patient'
-    });
+  const { login, currentUser } = useAuth();
+  const [isLoading, setLoading] = useState<boolean>(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
+  useEffect(() => {
+    if (currentUser) {
+      navigate(routes.home.path);
+    }
+  }, [currentUser]);
 
-    const validateForm = () => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData.email)) {
-            throw new Error('E-mail inválido');
-        }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignInSchema>({
+    resolver: zodResolver(signInSchema),
+    disabled: isLoading,
+  });
 
-        if (formData.password.length < 6) {
-            throw new Error('Senha deve ter pelo menos 6 caracteres');
-        }
-    };
+  const handleLogin = useCallback(async (data: SignInSchema) => {
+    setLoading(true);
+    try {
+      await login({
+        email: data.email,
+        password: data.password,
+      });
+    } catch (error) {
+      toast.error('Senha ou e-mail inválido');
+      setLoading(false);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        try {
-            validateForm();
-            
-            await login.mutateAsync(formData, {
-                onSuccess: () => {
-                    toast.success('Login realizado com sucesso!');
-                    navigate('/dashboard');
-                },
-                onError: (error: any) => {
-                    if (error.response?.data?.message) {
-                        toast.error(error.response.data.message);
-                    } else {
-                        toast.error('Erro ao realizar login. Verifique suas credenciais.');
-                    }
-                }
-            });
-        } catch (error) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error('Erro ao realizar login');
-            }
-            console.error('Erro no login:', error);
-        }
-    };
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
@@ -78,16 +75,14 @@ export function Login() {
                         <p className="text-gray-600">Faça login para acessar sua conta</p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit(handleLogin)} className="space-y-6">
                         <div className="space-y-6 bg-gray-50 p-6 rounded-xl">
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="block text-sm font-medium text-gray-700">E-mail</label>
                                     <input
                                         type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
+                                        {...register('email')}
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required
                                     />
@@ -104,9 +99,7 @@ export function Login() {
                                     </div>
                                     <input
                                         type="password"
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleChange}
+                                        {...register('password')}
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                                         required
                                     />
@@ -118,9 +111,9 @@ export function Login() {
                             <button
                                 type="submit"
                                 className="w-full px-8 py-3 bg-blue-600 text-white text-lg font-medium rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform transition-all duration-150 ease-in-out hover:scale-105"
-                                disabled={login.isPending}
+                                disabled={isLoading}
                             >
-                                {login.isPending ? 'Entrando...' : 'Entrar'}
+                                {isLoading ? 'Entrando...' : 'Entrar'}
                             </button>
 
                             <p className="text-center text-gray-600">

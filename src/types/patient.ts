@@ -1,37 +1,11 @@
-export interface Address {
-    zipCode: string;
-    street: string;
-    number: string;
-    complement?: string;
-    district: string;
-    city: string;
-    state: string;
-}
-
-export interface Patient {
-    id?: string;
-    name: string;
-    email: string;
-    document: string;
-    birthDate: string;
-    phone: string;
-    password: string;
-    address: Address;
-}
-
-export interface PatientResponse extends Omit<Patient, 'password'> {
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface CreatePatientDTO {
+export interface IPatient {
+    id: string;
     firstName: string;
     lastName: string;
     cpf: string;
     phone: string;
     email: string;
     password: string;
-    confirmPassword: string;
     cep: string;
     street: string;
     number: string;
@@ -39,4 +13,8 @@ export interface CreatePatientDTO {
     neighborhood: string;
     city: string;
     state: string;
-} 
+    created_at: Date;
+    updated_at: Date;
+    created_by_id: string | null;
+    updated_by_id: string | null;
+  }
