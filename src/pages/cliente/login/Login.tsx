@@ -20,12 +20,6 @@ const signInSchema = z.object({
     }),
   });
 
-interface LoginFormData {
-    email: string;
-    password: string;
-    userType: 'patient' | 'doctor';
-}
-
 type SignInSchema = z.infer<typeof signInSchema>;
 
 
@@ -43,7 +37,6 @@ export function Login() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
   } = useForm<SignInSchema>({
     resolver: zodResolver(signInSchema),
     disabled: isLoading,

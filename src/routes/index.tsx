@@ -15,7 +15,6 @@ import { DoctorsList } from '@/pages/cliente/doctors/DoctorsList'
 import { MyAppointments } from '@/pages/cliente/appointments/MyAppointments'
 import { NewAppointment } from '@/pages/cliente/appointments/NewAppointment'
 import { Profile } from '@/pages/cliente/profile/Profile'
-import { PrivateRoute } from '@/components/PrivateRoute'
 import SignIn from '@/pages/signin'
 
 export const router = createBrowserRouter([
@@ -38,9 +37,7 @@ export const router = createBrowserRouter([
     {
         path: '/area-cliente',
         element: (
-            <PrivateRoute allowedUserType="patient">
                 <ClientLayout />
-            </PrivateRoute>
         ),
         children: [
             {
@@ -64,9 +61,7 @@ export const router = createBrowserRouter([
     {
         path: '/dashboard',
         element: (
-            <PrivateRoute allowedUserType="doctor">
                 <Layout />
-            </PrivateRoute>
         ),
         children: [
             {
